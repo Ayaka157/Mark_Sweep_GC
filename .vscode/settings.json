@@ -1,0 +1,31 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "cmath": "c",
+        "*.tcc": "c",
+        "cinttypes": "c",
+        "cstdlib": "c",
+        "stdio.h": "c",
+        "limits": "c",
+        "string.h": "c",
+        "testcal.h": "c",
+        "stdint.h": "c",
+        "basedef.h": "c",
+        "cstdint": "cpp",
+        "stdbool.h": "c",
+        "basetsd.h": "c",
+        "cl.h": "c",
+        "__cl.h": "c",
+        "__cl_extra.h": "c",
+        "cl_extra.h": "c",
+        "strings.h": "c",
+        "c_linklist.h": "c",
+        "__base__.h": "c",
+        "signal.h": "c",
+        "stdarg.h": "c",
+        "memwatch.h": "c",
+        "voidptrlinklist_a.h": "c",
+        "voidptrlinklist.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
