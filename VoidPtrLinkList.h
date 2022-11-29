@@ -12,7 +12,7 @@ typedef struct VoidPtrLinkList
 
 void VPLL_Free(VoidPtrLinkList *head);
 int VPLL_Find(VoidPtrLinkList *head, void *Ptr);
-VoidPtrLinkList *VPLL_Add(VoidPtrLinkList *head, void *ptr);
+VoidPtrLinkList *VPLL_Add(VoidPtrLinkList *head, const void *ptr);
 VoidPtrLinkList *VPLL_Create_Node();
 VoidPtrLinkList *VPLL_Create();
 
@@ -45,6 +45,8 @@ VoidPtrLinkList *VPLL_Add(VoidPtrLinkList *head, void *ptr)
 
 VoidPtrLinkList *VPLL_Delete(VoidPtrLinkList *head, int index)
 {
+    if (index < 0)
+        return head;
     if (index == 0)
         return head;
     if (index > head->len)

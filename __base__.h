@@ -10,12 +10,12 @@
     #include <assert.h>
 
     typedef char Byte;
-    #define __CHARSIZE sizeof(char)
-    #define __PTRSIZE sizeof(int*)
-    #define __INTSIZE sizeof(int)
-    #define __DOUBLESIZE sizeof(double)
-    #define __FLOATSIZE sizeof(float)
-    #define __LONGSIZE sizeof(long)
+    #define __CHARSIZE__ sizeof(char)
+    #define __PTRSIZE__ sizeof(int*)
+    #define __INTSIZE__ sizeof(int)
+    #define __DOUBLESIZE__ sizeof(double)
+    #define __FLOATSIZE__ sizeof(float)
+    #define __LONGSIZE__ sizeof(long)
 
     #define UNIMPLEMENTED                                                 \
         do                                                                \
