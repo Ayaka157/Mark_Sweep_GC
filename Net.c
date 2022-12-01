@@ -65,6 +65,8 @@ void NN_FreeAll(NetNode *Root)
         p = p->next;
         VPLL_Delete(Root->CHead, 1);
     }
+    NN_Delete(Root);
+    return;
 }
 
 int main()
@@ -75,8 +77,7 @@ int main()
     // NetNode *A1 = NN_Create();
     A = NN_AddChild(A, A1);
     NN_FreeAll(A);
-    // free(A1);
-    // free(A);
+    free(A);
     system("PAUSE");
     return 0;
 }
