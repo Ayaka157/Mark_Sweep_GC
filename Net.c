@@ -1,6 +1,8 @@
 #include "__base__.h"
 #include "VoidPtrLinkList.h"
 
+#define X_IN_A_TO_B(x, a, b) a <= x &&x <= b
+
 typedef struct NetNode
 {
     // int RootNum;
@@ -67,6 +69,63 @@ void NN_FreeAll(NetNode *Root)
     }
     NN_Delete(Root);
     return;
+}
+
+NetNode *NN_FindChild(NetNode *Root, void *TPtr)
+{
+    VPLL *p = Root->CHead->next;
+    while (p != NULL)
+    {
+        NetNode *CAns = (NetNode *)(p->ptr);
+        if (CAns->Start <= TPtr && TPtr < CAns->End)
+            return CAns;
+    }
+    return NULL;
+}
+
+NetNode *NN_SearchAll(NetNode *Root, void *TPtr, VPLL *Roots)
+{
+    if (VPLL_Find(Roots, Root))
+        return NULL;
+    if (Root->CHead->len == 0)
+    {
+        if (Root->Start <= TPtr && TPtr <= Root->End)
+            return Root;
+        else
+            return NULL;
+    }
+    if (Root->Start <= TPtr && TPtr <= Root->End)
+        return Root;
+    VPLL_Add(Roots, (void *)Root);
+    VPLL *p = Root->CHead->next;
+    while (p != NULL)
+    {
+        NetNode *CAns = NN_SearchAll((NetNode *)(p->ptr), TPtr, Roots);
+        if (CAns != NULL)
+        {
+            return CAns;
+        }
+    }
+    VPLL_Delete(Roots, VPLL_Find(Roots, Root));
+}
+
+NetNode *NN_Find(NetNode *Root, void *TPtr, bool SearchChildren)
+{
+    if (Root->CHead->len == 0)
+    {
+        if (Root->Start <= TPtr && TPtr <= Root->End)
+            return Root;
+        else
+            return NULL;
+    }
+    if (!SearchChildren)
+        return NN_FindChild(Root, TPtr);
+    if (SearchChildren)
+    {
+        VPLL *Roots = VPLL_Create();
+        NN_SearchAll(Root, TPtr, Roots);
+        VPLL_Free(Roots);
+    }
 }
 
 int main()

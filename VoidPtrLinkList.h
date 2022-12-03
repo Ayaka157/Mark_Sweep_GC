@@ -84,9 +84,13 @@ int VPLL_Find(VoidPtrLinkList *head, void *Ptr)
     while (p != NULL)
     {
         if (p->ptr == Ptr)
+        {
+            head->ptr = (void *)p;
             return i;
+        }
         p = p->next;
     }
+    head->ptr = NULL;
     return -1;
 }
 
