@@ -55,7 +55,7 @@ NetNode *NN_AddChild(NetNode *Root, NetNode *Child)
 
 void NN_FreeAll(NetNode *Root)
 {
-    if (Root->CHead->len == 0)
+    if (Root->CHead == NULL || Root->CHead->len == 0)
     {
         NN_Delete(Root);
         return;
@@ -85,7 +85,7 @@ NetNode *NN_FindChild(NetNode *Root, void *TPtr)
 
 NetNode *NN_SearchAll(NetNode *Root, void *TPtr, VPLL *Roots)
 {
-    if (VPLL_Find(Roots, Root))
+    if (VPLL_Find(Roots, Root) != -1)
         return NULL;
     if (Root->CHead->len == 0)
     {
@@ -105,6 +105,7 @@ NetNode *NN_SearchAll(NetNode *Root, void *TPtr, VPLL *Roots)
         {
             return CAns;
         }
+        p = p->next;
     }
     VPLL_Delete(Roots, VPLL_Find(Roots, Root));
 }
@@ -123,8 +124,9 @@ NetNode *NN_Find(NetNode *Root, void *TPtr, bool SearchChildren)
     if (SearchChildren)
     {
         VPLL *Roots = VPLL_Create();
-        NN_SearchAll(Root, TPtr, Roots);
+        NetNode *CAns = NN_SearchAll(Root, TPtr, Roots);
         VPLL_Free(Roots);
+        return CAns;
     }
 }
 
@@ -132,11 +134,17 @@ int main()
 {
     int a = 0;
     NetNode *A = NN_Create(&a, &a + __INTSIZE__);
-    NetNode *A1 = NN_Create(&a, &a + __INTSIZE__);
-    // NetNode *A1 = NN_Create();
-    A = NN_AddChild(A, A1);
+    A = NN_AddChild(A, NN_Create(&a, &a + __INTSIZE__));
+    A = NN_AddChild(A, NN_Create(&a, &a + __INTSIZE__));
+    char b[] = "114514aaaa";
+    NetNode *A_1 = NN_Create(&a, &a + __INTSIZE__);
+    A_1 = NN_AddChild(A_1, NN_Create(&b, &b + __CHARSIZE__ * 11));
+    A = NN_AddChild(A, A_1);
+    NetNode *temp = NN_Find(A, &b, true);
     NN_FreeAll(A);
-    free(A);
+
+    // NN_FreeAll(NN_AddChild(NN_Create(&a, &a + __INTSIZE__) , NN_AddChild(NN_Create(&a, &a + __INTSIZE__), NN_Create(&a, &a + __INTSIZE__))));
+    // NN_FreeAll(NN_AddChild(NN_AddChild(NN_Create(&a, &a + __INTSIZE__), NN_Create(&a, &a + __INTSIZE__)), NN_Create(&a, &a + __INTSIZE__)));
     system("PAUSE");
     return 0;
 }

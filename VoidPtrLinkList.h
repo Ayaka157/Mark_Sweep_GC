@@ -45,9 +45,7 @@ VoidPtrLinkList *VPLL_Add(VoidPtrLinkList *head, void *ptr)
 
 VoidPtrLinkList *VPLL_Delete(VoidPtrLinkList *head, int index)
 {
-    if (index < 0)
-        return head;
-    if (index == 0)
+    if (index <= 0)
         return head;
     if (index > head->len)
         return head;
@@ -58,7 +56,7 @@ VoidPtrLinkList *VPLL_Delete(VoidPtrLinkList *head, int index)
     {
         if (i == index)
         {
-            q = p->next;
+            q->next = p->next;
             free(p);
             head->len--;
             return head;
