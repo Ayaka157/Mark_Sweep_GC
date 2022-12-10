@@ -5,7 +5,9 @@
 void *GC_Alloc(size_t size);
 void GC_Init();
 void GC_Exit();
+void GC_Mark();
 void GC_ClearALl(NN *Root);
+void GC_ScanMemory();
 VPLL *ScanMemory(void *StartPtr, void *EndPtr, bool NeedList, void (*Func)(NN *, void *));
 
 void *__GC_Stack_Ptr__ = NULL;
@@ -21,6 +23,8 @@ NN *GC_Root = NULL;
 
 void *GC_Alloc(size_t size)
 {
+    GC_Mark();
+
     void *Ret = malloc(size);
     assert(GC_Root);
     NN *NewNode = NN_Create(Ret, Ret + size);
@@ -33,8 +37,10 @@ void GC_Init()
     GC_Root = NN_Create(NULL, NULL);
 }
 
-void GC_ClearALl(NN *Root)
+void GC_ClearALl(NN *Root, VPLL *Roots)
 {
+    if (VPLL_Find(Roots, Root) > 0)
+        return;
     if (!Root)
         return;
     if (Root->CHead == NULL || Root->CHead->len == 0)
@@ -45,23 +51,41 @@ void GC_ClearALl(NN *Root)
         Root->Size = 0;
         return;
     }
+    VPLL_Add(Roots, Root);
     VPLL *p = Root->CHead->next;
     while (p != NULL)
     {
-        GC_ClearALl((NN *)(p->ptr));
+        GC_ClearALl((NN *)(p->ptr), Roots);
         p = p->next;
     }
     free(Root->Start);
     Root->Start = NULL;
     Root->End = NULL;
     Root->Size = 0;
+    VPLL_Delete(Roots, 1);
     return;
 }
 
 void GC_Exit()
 {
-    GC_ClearALl(GC_Root);
-    NN_FreeAll(GC_Root);
+    // VPLL *ClearRoots = VPLL_Create();
+    // GC_ClearALl(GC_Root, ClearRoots);
+    GC_Mark();
+    VPLL *p = GC_Root->CHead->next;
+    while (p)
+    {
+        free(((NN *)(p->ptr))->Start);
+        p = p->next;
+    }
+    free(GC_Root->Start);
+    // VPLL_Free(ClearRoots);
+    p = GC_Root->CHead->next;
+    while (p)
+    {
+        NN_Delete((NN *)(p->ptr));
+        p = p->next;
+    }
+    NN_Delete(GC_Root);
 }
 
 void GC_SM(NN *FindRes, void *i)
@@ -72,36 +96,10 @@ void GC_SM(NN *FindRes, void *i)
     FindRes->RefPtrs = VPLL_Add(FindRes->RefPtrs, i);
 }
 
-void GC_ScanMemory(void *StartPtr, void *EndPtr)
+void GC_ScanMemory()
 {
-    if (EndPtr == NULL)
-    {
-        setjmp(jmp_buf_V);
-        EndPtr = (void *)(jmp_buf_V[0]);
-    }
-    if (StartPtr == NULL)
-        StartPtr = __GC_Stack_Ptr__;
-    // printf("Start & End : %p, %p | %B \n\n\n", StartPtr, EndPtr, NeedList);
-    // VPLL *RetPtrs = NULL;
-    // if (NeedList)
-    //     RetPtrs = VPLL_Create();
-    // for (void *i = StartPtr; i >= EndPtr; i -= 4)
-    // {
-    //     NN *FindRes = NN_Find(GC_Root, *(void **)i, true);
-    //     // if (Heap < *(void **)i && Heap + HEAP_CAP > *(void **)i)
-    //     if (FindRes)
-    //     // if (FindRes && FindRes != GC_Root)
-    //     {
-    //         if (FindRes != GC_Root)
-    //         {
-    //             printf("%p, %d, %p, %d", i, (int)i, *(void **)i, *(int *)i);
-    //             printf("  |  %p, %d\n", FindRes, *(int *)(FindRes->Start));
-    //             FindRes->IsDirRef = true;
-    //             FindRes->RefPtrs = VPLL_Add(FindRes->RefPtrs, i);
-    //         }
-    //         // i = FindRes->End + 4;
-    //     }
-    // }
+    void *EndPtr = (void *)(jmp_buf_V[0]); 
+    void *StartPtr = __GC_Stack_Ptr__;
     VPLL_Free(ScanMemory(StartPtr, EndPtr, false, GC_SM));
 }
 
@@ -109,7 +107,7 @@ VPLL *ScanMemory(void *StartPtr, void *EndPtr, bool NeedList, void (*Func)(NN *,
 {
     if (!StartPtr || !EndPtr)
         return NULL;
-    printf("Start & End : %p, %p | %d \n\n\n", StartPtr, EndPtr, (int)NeedList);
+    // printf("Start & End : %p, %p | %d \n\n\n", StartPtr, EndPtr, (int)NeedList);
     VPLL *RetPtrs = NULL;
     if (NeedList)
         RetPtrs = VPLL_Create();
@@ -135,7 +133,10 @@ VPLL *_Mark(NN *Root, VPLL *Roots)
     if (VPLL_Find(Roots, Root) >= 0)
         return NULL;
     VPLL_Add(Roots, Root);
-    VPLL *ThisNodesPtrs = ScanMemory(Root->Start, Root->End, true, NULL);
+    VPLL *ThisNodesPtrs = ScanMemory(Root->End, Root->Start, true, NULL);
+
+    if (!ThisNodesPtrs)
+        return NULL;
 
     VPLL *p = ThisNodesPtrs->next;
 
@@ -146,13 +147,14 @@ VPLL *_Mark(NN *Root, VPLL *Roots)
         VPLL_Add(SubNode->RefPtrs, Root);
         // p = SubNode->RefPtrs->next->ptr - SubNode->RefPtrs->next->len - 1
         // SubNode->RefPtrs->next->len = -((*(void **)(p->ptr)) - SubNode->Start) - 1;
-        SubNode->RefPtrs->next->len = -(p->ptr - Root->Start) - 1;
-        VPLL_Add(Root->CHead, SubNode)
-        Root->CHead->next->len = -((*(void **)(p->ptr)) - SubNode->Start) - 1;
-        _Mark(SubNode);
+        SubNode->RefPtrs->next->len = -((uintptr_t)(p->ptr) - (uintptr_t)(Root->Start)) - 1;
+        VPLL_Add(Root->CHead, SubNode);
+        Root->CHead->next->len = -((uintptr_t)(*(void **)(p->ptr)) - (uintptr_t)(SubNode->Start)) - 1;
+        _Mark(SubNode,Roots);
         p = p->next;
     }
 
+    Roots = VPLL_Delete(Roots,1);
     VPLL_Free(ThisNodesPtrs);
 
     // TODO: _Mark() - Mark GC_Net
@@ -190,10 +192,20 @@ NetNode 结构及其中变量的计算/用途:
 //               所以 真正其指向的地址是115(指针记作p), *p = 115
 */
 
+void GC_Mark()
+{
+    GC_ScanMemory();
+    VPLL *MarkRoots = VPLL_Create();
+    if (GC_Root->CHead->len > 0)
+        _Mark((NN *)(GC_Root->CHead->next->ptr), MarkRoots);
+    VPLL_Free(MarkRoots);
+}
+
 typedef struct Foo
 {
     char *x;
     char y;
+    void *p;
 } Foo;
 
 int main()
@@ -202,22 +214,28 @@ int main()
 
     /* testing code */
 
-    // char *x = (char *)GC_Alloc(__CHARSIZE__ * 4);
-    // memcpy(x, "AB\n\0", sizeof("AB\n\0"));
+    char *x = (char *)GC_Alloc(__CHARSIZE__ * 4);
+    memcpy(x, "AB\n\0", sizeof("AB\n\0"));
 
-    // Foo *f = (Foo *)GC_Alloc(sizeof(Foo));
+    Foo *f1 = (Foo *)GC_Alloc(sizeof(Foo));
+    f1->x = x;
+    f1->y = 'Z';
+    f1->p = NULL;
+    Foo *f2 = (Foo *)GC_Alloc(sizeof(Foo));
+    f2->x = x;
+    f2->y = 'Z';
+    f2->p = f1;
+    f1->p = f2;
 
     // f->x = (char *)GC_Alloc(__CHARSIZE__ * (strlen(x) + 1));
 
     // memcpy(f->x, x, __CHARSIZE__ * (strlen(x) + 1));
-    // // f->x = x;
-    // f->y = 'Z';
 
-    // // char *y = (char *)GC_Alloc(__CHARSIZE__ * 4);
-    // // printf("%c\n\n\n\n", *x);
-    // // printf(x);
+    // char *y = (char *)GC_Alloc(__CHARSIZE__ * 4);
+    // printf("%c\n\n\n\n", *x);
+    // printf(x);
 
-    GC_ScanMemory(NULL, NULL);
+    
     // VPLL *GetPtrs = ScanMemory()
     system("PAUSE");
     return 0;

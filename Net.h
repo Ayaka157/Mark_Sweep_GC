@@ -4,11 +4,12 @@
     #include "__base__.h"
     #include "VoidPtrLinkList.h"
 
-    #define X_IN_A_TO_B(x, a, b) a <= x &&x <= b
+    #define X_IN_A_TO_B(x, a, b) (a) <= (x) && (x) <= (b)
 
     typedef struct NetNode
     {
         // int RootNum;
+        
         void *Start;
         void *End;
         size_t Size;
