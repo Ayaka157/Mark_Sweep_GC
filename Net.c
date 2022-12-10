@@ -1,5 +1,6 @@
 #include "__base__.h"
 #include "VoidPtrLinkList.h"
+// #include <pth
 
 #define X_IN_A_TO_B(x, a, b) a <= x &&x <= b
 
@@ -136,11 +137,12 @@ int main()
     NetNode *A = NN_Create(&a, &a + __INTSIZE__);
     A = NN_AddChild(A, NN_Create(&a, &a + __INTSIZE__));
     A = NN_AddChild(A, NN_Create(&a, &a + __INTSIZE__));
-    char b[] = "114514aaaa";
+    char b[] = "114514aaaa\nngm\n";
     NetNode *A_1 = NN_Create(&a, &a + __INTSIZE__);
     A_1 = NN_AddChild(A_1, NN_Create(&b, &b + __CHARSIZE__ * 11));
     A = NN_AddChild(A, A_1);
     NetNode *temp = NN_Find(A, &b, true);
+    printf((char *)(temp->Start));
     NN_FreeAll(A);
 
     // NN_FreeAll(NN_AddChild(NN_Create(&a, &a + __INTSIZE__) , NN_AddChild(NN_Create(&a, &a + __INTSIZE__), NN_Create(&a, &a + __INTSIZE__))));

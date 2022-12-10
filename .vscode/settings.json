@@ -25,7 +25,8 @@
         "stdarg.h": "c",
         "memwatch.h": "c",
         "voidptrlinklist_a.h": "c",
-        "voidptrlinklist.h": "c"
+        "voidptrlinklist.h": "c",
+        "random": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
