@@ -156,8 +156,6 @@ VPLL *_Mark(NN *Root, VPLL *Roots)
 
     Roots = VPLL_Delete(Roots,1);
     VPLL_Free(ThisNodesPtrs);
-
-    // TODO: _Mark() - Mark GC_Net
     return NULL;
 }
 /*
